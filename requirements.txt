@@ -1,0 +1,7 @@
+flask
+faiss-cpu==1.10.0
+sentence-transformers==2.2.2
+pandas
+numpy
+groq==0.4.1
+pyarrow==14.0.1

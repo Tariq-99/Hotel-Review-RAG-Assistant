@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hotel Review Assistant</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🏨 Hotel Review Assistant</h1>
+        <p>
+          Ask questions about hotel reviews and get AI-powered answers grounded
+          in real guest feedback
+        </p>
+      </header>
+
+      <div class="chat-container">
+        <div id="chat-history" class="chat-history">
+          <div class="welcome-message">
+            <h3>Welcome! Try asking:</h3>
+            <ul>
+              <li>"What do guests complain about at Hotel Arena?"</li>
+              <li>"Which hotels have the best location?"</li>
+              <li>"Are there noise issues at hotels in Amsterdam?"</li>
+              <li>"What do families say about Hotel Arena?"</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="input-container">
+          <input
+            type="text"
+            id="question-input"
+            placeholder="Ask a question about hotels..."
+            autocomplete="off"
+          />
+          <button id="send-btn" onclick="askQuestion()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Handle Enter key press
+      document
+        .getElementById("question-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            askQuestion();
+          }
+        });
+
+      async function askQuestion() {
+        const input = document.getElementById("question-input");
+        const question = input.value.trim();
+
+        if (!question) return;
+
+        const chatHistory = document.getElementById("chat-history");
+        const sendBtn = document.getElementById("send-btn");
+
+        // Clear welcome message if present
+        const welcome = chatHistory.querySelector(".welcome-message");
+        if (welcome) welcome.remove();
+
+        // Add user question to chat
+        addMessage(question, "user");
+        input.value = "";
+        sendBtn.disabled = true;
+        sendBtn.textContent = "Thinking...";
+
+        try {
+          const response = await fetch("/ask", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ question: question }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Add AI answer
+            addMessage(data.answer, "assistant");
+
+            // Add sources
+            addSources(data.sources);
+          } else {
+            addMessage(
+              "Error: " + (data.error || "Something went wrong"),
+              "error",
+            );
+          }
+        } catch (error) {
+          addMessage("Error: Failed to connect to server", "error");
+        }
+
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send";
+      }
+
+      function addMessage(text, type) {
+        const chatHistory = document.getElementById("chat-history");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${type}-message`;
+        messageDiv.textContent = text;
+        chatHistory.appendChild(messageDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+
+      function addSources(sources) {
+        const chatHistory = document.getElementById("chat-history");
+        const sourcesDiv = document.createElement("div");
+        sourcesDiv.className = "sources";
+
+        let sourcesHTML = "<strong>📚 Sources:</strong><ul>";
+        sources.forEach((source) => {
+          sourcesHTML += `<li>${source.index}. ${source.hotel_name} - Score: ${source.reviewer_score} (${source.review_date})</li>`;
+        });
+        sourcesHTML += "</ul>";
+
+        sourcesDiv.innerHTML = sourcesHTML;
+        chatHistory.appendChild(sourcesDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+    </script>
+  </body>
+</html>
