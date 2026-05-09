@@ -40,7 +40,7 @@ text
 ### Prerequisites
 
 - Python 3.8+
-- Groq API key ([Get one free here](https://console.groq.com))
+- Groq API key
 
 ### Installation
 
